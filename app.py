@@ -32,14 +32,18 @@ def auto_scroll():
     st.markdown(
         """
         <script>
-        const element = document.getElementById("end-of-chat");
-        if (element) {
-            element.scrollIntoView({ behavior: "smooth" });
+        const latest = document.getElementById("latest-bot-msg");
+        if (latest) {
+            latest.scrollIntoView({
+                behavior: "smooth",
+                block: "start"
+            });
         }
         </script>
         """,
         unsafe_allow_html=True
     )
+
 
 # ---------------- Caching ----------------
 @st.cache_resource
@@ -174,13 +178,22 @@ if prompt := st.chat_input("Type your question about Ayesha's CV..."):
 chat_container = st.container()
 
 with chat_container:
-    for msg in st.session_state.messages:
+    for i, msg in enumerate(st.session_state.messages):
+        is_latest_bot = (
+            i == len(st.session_state.messages) - 1
+            and msg["role"] == "assistant"
+        )
+
+        msg_id = "latest-bot-msg" if is_latest_bot else ""
+
         if msg["role"] == "assistant":
             st.markdown(
                 f"""
-                <div class="chat-row">
+                <div class="chat-row" id="{msg_id}">
                     <img src="{BOT_AVATAR}" class="chat-avatar">
-                    <div class="bot-bubble">{msg['content']}</div>
+                    <div class="chat-msg">
+                        <div class="bot-bubble">{msg['content']}</div>
+                    </div>
                 </div>
                 """,
                 unsafe_allow_html=True
@@ -190,14 +203,12 @@ with chat_container:
                 f"""
                 <div class="chat-row">
                     <img src="{USER_AVATAR}" class="chat-avatar">
-                    <div class="user-bubble">{msg['content']}</div>
+                    <div class="chat-msg">
+                        <div class="user-bubble">{msg['content']}</div>
+                    </div>
                 </div>
                 """,
                 unsafe_allow_html=True
             )
-
-    # ✅ Scroll anchor
-    st.markdown('<div id="end-of-chat"></div>', unsafe_allow_html=True)
-
-# ✅ Trigger scroll AFTER rendering
+# Trigger scroll AFTER rendering
 auto_scroll()
