@@ -89,9 +89,6 @@ qa_chain = ConversationalRetrievalChain.from_llm(
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-if "show_suggestions" not in st.session_state:
-    st.session_state.show_suggestions = True
-
 # ---------------- Custom CSS ----------------
 st.markdown(
     """
@@ -103,7 +100,8 @@ st.markdown(
         min-height: 100vh;
     }
 
-    h1, .stTitle {
+    /* Title color */
+    h1 {
         color: white !important;
     }
 
@@ -138,17 +136,32 @@ st.markdown(
         border: 2px solid black;
     }
 
-    .suggestion-btn button {
+    /* Chat input black background */
+    .stChatInput input {
         background-color: #1E1E1E !important;
-        color: #FFFFFF !important;
+        color: white !important;
+        border: 2px solid black !important;
         border-radius: 8px !important;
-        padding: 8px 14px !important;
+    }
+    .stChatInput input:focus {
+        border: 2px solid black !important;
+        box-shadow: none !important;
+    }
+
+    /* Suggestion buttons black */
+    .stButton>button {
+        background-color: #1E1E1E !important;
+        color: white !important;
+        border-radius: 8px !important;
         border: 1px solid black !important;
+        padding: 8px 16px !important;
     }
-    .suggestion-btn button:hover {
-        border: 1px solid #FFFFFF !important;
-        cursor: pointer !important;
+    .stButton>button:hover {
+        border: 1px solid white !important;
+        cursor: pointer;
     }
+
+   
     </style>
     """,
     unsafe_allow_html=True
@@ -161,42 +174,54 @@ st.write(
     "— answers come only from her CV."
 )
 
+
+
 BOT_AVATAR = "https://cdn-icons-png.flaticon.com/512/4712/4712107.png"
 USER_AVATAR = "https://cdn-icons-png.flaticon.com/512/1077/1077063.png"
 
 # ---------------- Suggestion Panel ----------------
 if len(st.session_state.messages) == 0:
     st.markdown("#### 🔎 Try asking me:")
+
     cols = st.columns(3)
     suggestions = [
         "Tell me about Ayesha's projects",
         "What internships does Ayesha have?",
         "What are Ayesha's top technical skills?"
     ]
+
     for i, text in enumerate(suggestions):
-        if cols[i].button(text, key=f"sugg_{i}", help="Click to ask"):
-            st.session_state.messages.append({"role": "user", "content": text})
+        if cols[i].button(text, key=f"sugg_{i}"):
+            st.session_state.messages.append(
+                {"role": "user", "content": text}
+            )
+
             with st.spinner("Thinking..."):
-                result = qa_chain({"question": text})
+                result = qa_chain.invoke({"question": text})
                 answer = result["answer"]
-            st.session_state.messages.append({"role": "assistant", "content": answer})
+
+            st.session_state.messages.append(
+                {"role": "assistant", "content": answer}
+            )
             st.rerun()
 
 # ---------------- Chat Input ----------------
 if prompt := st.chat_input("Type your question about Ayesha's CV..."):
-    st.session_state.show_suggestions = False
     st.session_state.messages.append(
         {"role": "user", "content": prompt}
     )
+
     with st.spinner("Thinking..."):
         result = qa_chain.invoke({"question": prompt})
         answer = result["answer"]
+
     st.session_state.messages.append(
         {"role": "assistant", "content": answer}
     )
 
 # ---------------- Display Chat ----------------
 chat_container = st.container()
+
 with chat_container:
     for msg in st.session_state.messages:
         if msg["role"] == "assistant":
