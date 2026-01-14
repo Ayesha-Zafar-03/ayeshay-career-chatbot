@@ -89,7 +89,7 @@ qa_chain = ConversationalRetrievalChain.from_llm(
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-# ---------------- Custom CSS ----------------
+# ---------------- Custom CSS (UNCHANGED) ----------------
 st.markdown(
     """
     <style>
@@ -98,11 +98,6 @@ st.markdown(
         no-repeat center center fixed;
         background-size: cover;
         min-height: 100vh;
-    }
-
-    /* Title color */
-    h1 {
-        color: white !important;
     }
 
     .user-bubble, .bot-bubble {
@@ -147,20 +142,10 @@ st.write(
     "— answers come only from her CV."
 )
 
-# -------- Download CV Button --------
-if os.path.exists(CV_PATH):
-    with open(CV_PATH, "rb") as file:
-        st.download_button(
-            label="📄 Download CV",
-            data=file,
-            file_name="Ayesha_Zafar_CV.pdf",
-            mime="application/pdf"
-        )
-
 BOT_AVATAR = "https://cdn-icons-png.flaticon.com/512/4712/4712107.png"
 USER_AVATAR = "https://cdn-icons-png.flaticon.com/512/1077/1077063.png"
 
-# ---------------- Suggestion Panel ----------------
+# ---------------- Suggestion Panel (FIXED) ----------------
 if len(st.session_state.messages) == 0:
     st.markdown("#### 🔎 Try asking me:")
 
