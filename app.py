@@ -135,6 +135,38 @@ st.markdown(
         margin-right: 12px;
         border: 2px solid black;
     }
+
+    /* Chat input black background */
+    .stChatInput input {
+        background-color: #1E1E1E !important;
+        color: white !important;
+        border: 2px solid black !important;
+        border-radius: 8px !important;
+    }
+    .stChatInput input:focus {
+        border: 2px solid black !important;
+        box-shadow: none !important;
+    }
+
+    /* Suggestion buttons black */
+    .stButton>button {
+        background-color: #1E1E1E !important;
+        color: white !important;
+        border-radius: 8px !important;
+        border: 1px solid black !important;
+        padding: 8px 16px !important;
+    }
+    .stButton>button:hover {
+        border: 1px solid white !important;
+        cursor: pointer;
+    }
+
+    /* Download CV top right */
+    .download-cv {
+        position: absolute;
+        top: 20px;
+        right: 30px;
+    }
     </style>
     """,
     unsafe_allow_html=True
@@ -147,14 +179,22 @@ st.write(
     "— answers come only from her CV."
 )
 
-# -------- Download CV Button --------
+# -------- Download CV Button (Top-Right, Black) --------
 if os.path.exists(CV_PATH):
     with open(CV_PATH, "rb") as file:
+        st.markdown(
+            f"""
+            <div class="download-cv">
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
         st.download_button(
             label="📄 Download CV",
             data=file,
             file_name="Ayesha_Zafar_CV.pdf",
-            mime="application/pdf"
+            mime="application/pdf",
+            key="download_cv"
         )
 
 BOT_AVATAR = "https://cdn-icons-png.flaticon.com/512/4712/4712107.png"
