@@ -92,7 +92,7 @@ if "messages" not in st.session_state:
 if "show_suggestions" not in st.session_state:
     st.session_state.show_suggestions = True
 
-# ---------------- Mobile-Friendly CSS ----------------
+# ---------------- Custom CSS (CHAT ONLY) ----------------
 st.markdown(
     """
     <style>
@@ -134,7 +134,7 @@ st.markdown(
         color: white;
     }
 
-    /* -------- Mobile Fixes -------- */
+    /* Mobile optimization (chat only) */
     @media (max-width: 600px) {
         .user-bubble, .bot-bubble {
             max-width: 92%;
@@ -155,13 +155,13 @@ st.markdown(
 st.title("✨ Ask Ayesha's AI Career Bot")
 st.write(
     "Ask anything about **Ayesha's education, skills, projects, and experience**. "
-    "Answers are generated **only from her CV**."
+    "Responses are generated **only from her CV**."
 )
 
 BOT_AVATAR = "https://cdn-icons-png.flaticon.com/512/4712/4712107.png"
 USER_AVATAR = "https://cdn-icons-png.flaticon.com/512/1077/1077063.png"
 
-# ---------------- Suggestion Buttons (START ONLY) ----------------
+# ---------------- Suggestion Buttons (DEFAULT STYLE) ----------------
 if st.session_state.show_suggestions:
     st.markdown("**Try asking:**")
 
