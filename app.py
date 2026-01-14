@@ -184,7 +184,12 @@ if os.path.exists(CV_PATH):
     with open(CV_PATH, "rb") as file:
         st.markdown(
             f"""
-            <div class="download-cv">
+            <div style="
+                position: absolute;
+                top: 20px;
+                right: 30px;
+                z-index: 1000;
+            ">
             </div>
             """,
             unsafe_allow_html=True
@@ -194,8 +199,11 @@ if os.path.exists(CV_PATH):
             data=file,
             file_name="Ayesha_Zafar_CV.pdf",
             mime="application/pdf",
-            key="download_cv"
+            key="download_cv",
+            help="Download Ayesha's CV",
+            use_container_width=False
         )
+
 
 BOT_AVATAR = "https://cdn-icons-png.flaticon.com/512/4712/4712107.png"
 USER_AVATAR = "https://cdn-icons-png.flaticon.com/512/1077/1077063.png"
