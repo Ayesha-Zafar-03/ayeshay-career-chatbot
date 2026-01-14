@@ -89,10 +89,7 @@ qa_chain = ConversationalRetrievalChain.from_llm(
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-if "show_suggestions" not in st.session_state:
-    st.session_state.show_suggestions = True
-
-# ---------------- Custom CSS (UNCHANGED) ----------------
+# ---------------- Custom CSS ----------------
 st.markdown(
     """
     <style>
@@ -101,6 +98,11 @@ st.markdown(
         no-repeat center center fixed;
         background-size: cover;
         min-height: 100vh;
+    }
+
+    /* Title color */
+    h1 {
+        color: white !important;
     }
 
     .user-bubble, .bot-bubble {
@@ -145,42 +147,47 @@ st.write(
     "— answers come only from her CV."
 )
 
+# -------- Download CV Button --------
+if os.path.exists(CV_PATH):
+    with open(CV_PATH, "rb") as file:
+        st.download_button(
+            label="📄 Download CV",
+            data=file,
+            file_name="Ayesha_Zafar_CV.pdf",
+            mime="application/pdf"
+        )
+
 BOT_AVATAR = "https://cdn-icons-png.flaticon.com/512/4712/4712107.png"
 USER_AVATAR = "https://cdn-icons-png.flaticon.com/512/1077/1077063.png"
 
-# ---------------- Suggestion Panel (DEFAULT BUTTONS) ----------------
-if st.session_state.show_suggestions:
-    st.markdown("### 🔎 Try asking:")
+# ---------------- Suggestion Panel ----------------
+if len(st.session_state.messages) == 0:
+    st.markdown("#### 🔎 Try asking me:")
 
-    col1, col2, col3 = st.columns(3)
+    cols = st.columns(3)
+    suggestions = [
+        "Tell me about Ayesha's projects",
+        "What internships does Ayesha have?",
+        "What are Ayesha's top technical skills?"
+    ]
 
-    with col1:
-        if st.button("🎓 Education"):
+    for i, text in enumerate(suggestions):
+        if cols[i].button(text, key=f"sugg_{i}"):
             st.session_state.messages.append(
-                {"role": "user", "content": "What is Ayesha's education?"}
+                {"role": "user", "content": text}
             )
-            st.session_state.show_suggestions = False
-            st.rerun()
 
-    with col2:
-        if st.button("💼 Projects"):
-            st.session_state.messages.append(
-                {"role": "user", "content": "What projects has Ayesha worked on?"}
-            )
-            st.session_state.show_suggestions = False
-            st.rerun()
+            with st.spinner("Thinking..."):
+                result = qa_chain.invoke({"question": text})
+                answer = result["answer"]
 
-    with col3:
-        if st.button("🛠 Skills"):
             st.session_state.messages.append(
-                {"role": "user", "content": "What are Ayesha's technical skills?"}
+                {"role": "assistant", "content": answer}
             )
-            st.session_state.show_suggestions = False
             st.rerun()
 
 # ---------------- Chat Input ----------------
 if prompt := st.chat_input("Type your question about Ayesha's CV..."):
-    st.session_state.show_suggestions = False
     st.session_state.messages.append(
         {"role": "user", "content": prompt}
     )
