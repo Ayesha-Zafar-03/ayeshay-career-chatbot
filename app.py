@@ -92,7 +92,7 @@ if "messages" not in st.session_state:
 if "show_suggestions" not in st.session_state:
     st.session_state.show_suggestions = True
 
-# ---------------- Custom CSS (UNCHANGED) ----------------
+# ---------------- Custom CSS ----------------
 st.markdown(
     """
     <style>
@@ -101,6 +101,10 @@ st.markdown(
         no-repeat center center fixed;
         background-size: cover;
         min-height: 100vh;
+    }
+
+    h1, .stTitle {
+        color: white !important;
     }
 
     .user-bubble, .bot-bubble {
@@ -133,6 +137,18 @@ st.markdown(
         margin-right: 12px;
         border: 2px solid black;
     }
+
+    .suggestion-btn button {
+        background-color: #1E1E1E !important;
+        color: #FFFFFF !important;
+        border-radius: 8px !important;
+        padding: 8px 14px !important;
+        border: 1px solid black !important;
+    }
+    .suggestion-btn button:hover {
+        border: 1px solid #FFFFFF !important;
+        cursor: pointer !important;
+    }
     </style>
     """,
     unsafe_allow_html=True
@@ -148,34 +164,23 @@ st.write(
 BOT_AVATAR = "https://cdn-icons-png.flaticon.com/512/4712/4712107.png"
 USER_AVATAR = "https://cdn-icons-png.flaticon.com/512/1077/1077063.png"
 
-# ---------------- Suggestion Panel (DEFAULT BUTTONS) ----------------
-if st.session_state.show_suggestions:
-    st.markdown("### 🔎 Try asking:")
-
-    col1, col2, col3 = st.columns(3)
-
-    with col1:
-        if st.button("🎓 Education"):
-            st.session_state.messages.append(
-                {"role": "user", "content": "What is Ayesha's education?"}
-            )
-            st.session_state.show_suggestions = False
+# ---------------- Suggestion Panel ----------------
+if len(st.session_state.messages) == 0:
+    st.markdown("#### 🔎 Try asking me:")
+    cols = st.columns(3)
+    suggestions = [
+        "Tell me about Ayesha's projects",
+        "What internships does Ayesha have?",
+        "What are Ayesha's top technical skills?"
+    ]
+    for i, text in enumerate(suggestions):
+        if cols[i].button(text, key=f"sugg_{i}", help="Click to ask"):
+            st.session_state.messages.append({"role": "user", "content": text})
+            with st.spinner("Thinking..."):
+                result = qa_chain({"question": text})
+                answer = result["answer"]
+            st.session_state.messages.append({"role": "assistant", "content": answer})
             st.rerun()
-
-    with col2:
-        if st.button("💼 Projects"):
-            st.session_state.messages.append(
-                {"role": "user", "content": "What projects has Ayesha worked on?"}
-            )
-            st.session_state.show_suggestions = False
-            st.rerun()
-
-    with col3:
-        if st.button("🛠 Skills"):
-            st.session_state.messages.append(
-                {"role": "user", "content": "What are Ayesha's technical skills?"}
-            )
-            st.session_state.show_suggestions = False
 
 # ---------------- Chat Input ----------------
 if prompt := st.chat_input("Type your question about Ayesha's CV..."):
@@ -183,18 +188,15 @@ if prompt := st.chat_input("Type your question about Ayesha's CV..."):
     st.session_state.messages.append(
         {"role": "user", "content": prompt}
     )
-
     with st.spinner("Thinking..."):
         result = qa_chain.invoke({"question": prompt})
         answer = result["answer"]
-
     st.session_state.messages.append(
         {"role": "assistant", "content": answer}
     )
 
 # ---------------- Display Chat ----------------
 chat_container = st.container()
-
 with chat_container:
     for msg in st.session_state.messages:
         if msg["role"] == "assistant":
