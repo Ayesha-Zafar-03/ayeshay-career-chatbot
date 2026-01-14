@@ -180,20 +180,46 @@ st.write(
 )
 
 # -------- Download CV Button (Top-Right, Black) --------
+# -------- Download CV Button (Top-Right, Floating) --------
 if os.path.exists(CV_PATH):
     with open(CV_PATH, "rb") as file:
         st.markdown(
-            f"""
-            <div style="
+            """
+            <style>
+            /* Floating top-right CV button */
+            .download-cv-btn {
                 position: absolute;
                 top: 20px;
                 right: 30px;
                 z-index: 1000;
-            ">
+            }
+
+            /* Black background style like chat input */
+            .download-cv-btn button {
+                background-color: #1E1E1E !important;
+                color: #FFFFFF !important;
+                border: 1px solid #000000 !important;
+                border-radius: 8px !important;
+                padding: 6px 12px !important;
+            }
+
+            .download-cv-btn button:hover {
+                border: 1px solid #FFFFFF !important;
+                cursor: pointer !important;
+            }
+            </style>
+            """,
+            unsafe_allow_html=True
+        )
+
+        st.markdown(
+            f"""
+            <div class="download-cv-btn">
             </div>
             """,
             unsafe_allow_html=True
         )
+
         st.download_button(
             label="📄 Download CV",
             data=file,
@@ -203,6 +229,7 @@ if os.path.exists(CV_PATH):
             help="Download Ayesha's CV",
             use_container_width=False
         )
+
 
 
 BOT_AVATAR = "https://cdn-icons-png.flaticon.com/512/4712/4712107.png"
