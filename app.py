@@ -16,10 +16,7 @@ from langchain.memory import ConversationBufferMemory
 from langchain_groq import ChatGroq
 
 # ---------------- Setup ----------------
-st.set_page_config(
-    page_title="Ayesha's Career Chatbot",
-    layout="centered"
-)
+st.set_page_config(page_title="Ayesha's Career Chatbot", layout="centered")
 
 # ---------------- Environment ----------------
 load_dotenv()
@@ -43,24 +40,13 @@ def load_vectorstore():
             embedding_function=embeddings
         )
 
-    loader = (
-        PyPDFLoader(CV_PATH)
-        if CV_PATH.lower().endswith(".pdf")
-        else TextLoader(CV_PATH, encoding="utf8")
-    )
-
+    loader = PyPDFLoader(CV_PATH) if CV_PATH.lower().endswith(".pdf") else TextLoader(CV_PATH, encoding="utf8")
     docs = loader.load()
-    splitter = RecursiveCharacterTextSplitter(
-        chunk_size=1000,
-        chunk_overlap=200
-    )
+
+    splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
     chunks = splitter.split_documents(docs)
 
-    return Chroma.from_documents(
-        chunks,
-        embeddings,
-        persist_directory=INDEX_DIR
-    )
+    return Chroma.from_documents(chunks, embeddings, persist_directory=INDEX_DIR)
 
 # ---------------- Load AI ----------------
 vectorstore = load_vectorstore()
@@ -90,213 +76,156 @@ if "messages" not in st.session_state:
     st.session_state.messages = []
 
 # ---------------- Custom CSS ----------------
-st.markdown(
-    """
-    <style>
-    .stApp {
-        background: url("https://c.tenor.com/Ho0ZextTZJEAAAAC/ai-digital.gif")
-        no-repeat center center fixed;
-        background-size: cover;
-        min-height: 100vh;
-    }
+st.markdown("""
+<style>
 
-    /* Title color */
-    h1 {
-        color: white !important;
-    }
+.stApp {
+    background: url("https://c.tenor.com/Ho0ZextTZJEAAAAC/ai-digital.gif")
+    no-repeat center center fixed;
+    background-size: cover;
+}
 
-    .user-bubble, .bot-bubble {
-        border-radius: 14px;
-        padding: 10px 14px;
-        margin: 6px 0;
-        max-width: 75%;
-        animation: fadeIn 0.3s ease-in-out;
-    }
+h1 { color: white !important; }
 
-    .user-bubble {
-        background: #1E1E1E;
-        color: white;
-    }
+.chat-wrapper {
+    height: 70vh;
+    overflow-y: auto;
+    padding: 15px;
+    background: rgba(0,0,0,0.45);
+    border-radius: 18px;
+}
 
-    .bot-bubble {
-        background: rgba(0,0,0,0.6);
-        color: white;
-    }
+/* Chat rows */
+.chat-row {
+    display: flex;
+    margin-bottom: 12px;
+    align-items: flex-end;
+}
 
-    .chat-row {
-        display: flex;
-        margin-bottom: 10px;
-    }
+/* Bot left */
+.chat-row.bot {
+    justify-content: flex-start;
+}
 
-    .chat-avatar {
-        width: 40px;
-        height: 40px;
-        border-radius: 50%;
-        margin-right: 12px;
-        border: 2px solid black;
-    }
+/* User right */
+.chat-row.user {
+    justify-content: flex-end;
+}
 
-    /* Chat input black background */
-    .stChatInput input {
-        background-color: #1E1E1E !important;
-        color: white !important;
-        border: 2px solid black !important;
-        border-radius: 8px !important;
-    }
-    .stChatInput input:focus {
-        border: 2px solid black !important;
-        box-shadow: none !important;
-    }
+/* Bubbles */
+.user-bubble, .bot-bubble {
+    border-radius: 16px;
+    padding: 10px 14px;
+    max-width: 65%;
+    animation: fadeIn 0.3s ease-in-out;
+    word-wrap: break-word;
+}
 
-    /* Suggestion buttons black */
-    .stButton>button {
-        background-color: #1E1E1E !important;
-        color: white !important;
-        border-radius: 8px !important;
-        border: 1px solid black !important;
-        padding: 8px 16px !important;
-    }
-    .stButton>button:hover {
-        border: 1px solid white !important;
-        cursor: pointer;
-    }
+/* User */
+.user-bubble {
+    background: #1E1E1E;
+    color: white;
+    border-bottom-right-radius: 4px;
+}
 
-    /* Download CV top right */
-    .download-cv {
-        position: absolute;
-        top: 20px;
-        right: 30px;
-    }
-    </style>
-    """,
-    unsafe_allow_html=True
-)
+/* Bot */
+.bot-bubble {
+    background: rgba(0,0,0,0.75);
+    color: white;
+    border-bottom-left-radius: 4px;
+}
+
+/* Avatars */
+.chat-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    margin: 0 8px;
+    border: 2px solid black;
+}
+
+/* Input */
+.stChatInput input {
+    background-color: #1E1E1E !important;
+    color: white !important;
+    border: 2px solid black !important;
+    border-radius: 10px !important;
+}
+
+/* Buttons */
+.stButton>button {
+    background-color: #1E1E1E !important;
+    color: white !important;
+    border-radius: 8px !important;
+    border: 1px solid black !important;
+}
+
+</style>
+""", unsafe_allow_html=True)
 
 # ---------------- UI ----------------
 st.title("✨ Ask Ayesha's AI Career Bot")
-st.write(
-    "Ask me anything about **Ayesha's education, skills, and projects** "
-    "— answers come only from her CV."
-)
+st.write("Ask me anything about **Ayesha's education, skills, and projects** — answers come only from her CV.")
 
-# -------- Download CV Button (Top-Right, Black) --------
-# -------- Download CV Button (Top-Right, Floating) --------
+# ---------------- Download CV ----------------
 if os.path.exists(CV_PATH):
     with open(CV_PATH, "rb") as file:
-        st.markdown(
-            """
-            <style>
-            /* Floating top-right CV button */
-            .download-cv-btn {
-                position: absolute;
-                top: 20px;
-                right: 30px;
-                z-index: 1000;
-            }
-
-            /* Black background style like chat input */
-            .download-cv-btn button {
-                background-color: #1E1E1E !important;
-                color: #FFFFFF !important;
-                border: 1px solid #000000 !important;
-                border-radius: 8px !important;
-                padding: 6px 12px !important;
-            }
-
-            .download-cv-btn button:hover {
-                border: 1px solid #FFFFFF !important;
-                cursor: pointer !important;
-            }
-            </style>
-            """,
-            unsafe_allow_html=True
-        )
-
-        st.markdown(
-            f"""
-            <div class="download-cv-btn">
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
-
-        st.download_button(
-            label="📄 Download CV",
-            data=file,
-            file_name="Ayesha_Zafar_CV.pdf",
-            mime="application/pdf",
-            key="download_cv",
-            help="Download Ayesha's CV",
-            use_container_width=False
-        )
-
-
+        st.download_button("📄 Download CV", file, "Ayesha_Zafar_CV.pdf", "application/pdf")
 
 BOT_AVATAR = "https://cdn-icons-png.flaticon.com/512/4712/4712107.png"
 USER_AVATAR = "https://cdn-icons-png.flaticon.com/512/1077/1077063.png"
 
-# ---------------- Suggestion Panel ----------------
+# ---------------- Suggestions ----------------
 if len(st.session_state.messages) == 0:
     st.markdown("#### 🔎 Try asking me:")
-
     cols = st.columns(3)
     suggestions = [
         "Tell me about Ayesha's projects",
         "What internships does Ayesha have?",
         "What are Ayesha's top technical skills?"
     ]
-
     for i, text in enumerate(suggestions):
-        if cols[i].button(text, key=f"sugg_{i}"):
-            st.session_state.messages.append(
-                {"role": "user", "content": text}
-            )
-
+        if cols[i].button(text):
+            st.session_state.messages.append({"role": "user", "content": text})
             with st.spinner("Thinking..."):
                 result = qa_chain.invoke({"question": text})
-                answer = result["answer"]
-
-            st.session_state.messages.append(
-                {"role": "assistant", "content": answer}
-            )
+            st.session_state.messages.append({"role": "assistant", "content": result["answer"]})
             st.rerun()
 
 # ---------------- Chat Input ----------------
 if prompt := st.chat_input("Type your question about Ayesha's CV..."):
-    st.session_state.messages.append(
-        {"role": "user", "content": prompt}
-    )
-
+    st.session_state.messages.append({"role": "user", "content": prompt})
     with st.spinner("Thinking..."):
         result = qa_chain.invoke({"question": prompt})
-        answer = result["answer"]
+    st.session_state.messages.append({"role": "assistant", "content": result["answer"]})
 
-    st.session_state.messages.append(
-        {"role": "assistant", "content": answer}
-    )
+# ---------------- Chat Display ----------------
+st.markdown('<div class="chat-wrapper" id="chatbox">', unsafe_allow_html=True)
 
-# ---------------- Display Chat ----------------
-chat_container = st.container()
+for msg in st.session_state.messages:
+    if msg["role"] == "assistant":
+        st.markdown(f"""
+        <div class="chat-row bot">
+            <img src="{BOT_AVATAR}" class="chat-avatar">
+            <div class="bot-bubble">{msg['content']}</div>
+        </div>
+        """, unsafe_allow_html=True)
+    else:
+        st.markdown(f"""
+        <div class="chat-row user">
+            <div class="user-bubble">{msg['content']}</div>
+            <img src="{USER_AVATAR}" class="chat-avatar">
+        </div>
+        """, unsafe_allow_html=True)
 
-with chat_container:
-    for msg in st.session_state.messages:
-        if msg["role"] == "assistant":
-            st.markdown(
-                f"""
-                <div class="chat-row">
-                    <img src="{BOT_AVATAR}" class="chat-avatar">
-                    <div class="bot-bubble">{msg['content']}</div>
-                </div>
-                """,
-                unsafe_allow_html=True
-            )
-        else:
-            st.markdown(
-                f"""
-                <div class="chat-row">
-                    <img src="{USER_AVATAR}" class="chat-avatar">
-                    <div class="user-bubble">{msg['content']}</div>
-                </div>
-                """,
-                unsafe_allow_html=True
-            )
+st.markdown("</div>", unsafe_allow_html=True)
+
+# ---------------- Auto Scroll Chat Box ----------------
+st.markdown("""
+<script>
+const chatbox = document.getElementById("chatbox");
+if (chatbox) {
+    chatbox.scrollTop = chatbox.scrollHeight;
+}
+</script>
+""", unsafe_allow_html=True)
