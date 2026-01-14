@@ -15,12 +15,16 @@ from langchain.memory import ConversationBufferMemory
 # ---- Groq LLM ----
 from langchain_groq import ChatGroq
 
-# ---------------- Setup ----------------
-st.set_page_config(page_title="Ayesha's Career Chatbot", layout="centered")
+# ---------------- Page Setup ----------------
+st.set_page_config(
+    page_title="Ayesha's Career Chatbot",
+    layout="centered"
+)
 
+# ---------------- Load Environment ----------------
 load_dotenv()
 if "GROQ_API_KEY" not in os.environ:
-    st.error("❌ GROQ_API_KEY not found.")
+    st.error("❌ GROQ_API_KEY not found. Add it in your .env file.")
     st.stop()
 
 CV_PATH = "cv.pdf"
@@ -58,10 +62,10 @@ def load_vectorstore():
         persist_directory=INDEX_DIR
     )
 
+# ---------------- Load AI ----------------
 vectorstore = load_vectorstore()
-retriever = vectorstore.as_retriever(search_kwargs={"k": 15})
+retriever = vectorstore.as_retriever(search_kwargs={"k": 12})
 
-# ---------------- LLM ----------------
 llm = ChatGroq(
     groq_api_key=os.getenv("GROQ_API_KEY"),
     model="llama-3.3-70b-versatile",
@@ -85,146 +89,103 @@ qa_chain = ConversationalRetrievalChain.from_llm(
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-# ---------------- CSS ----------------
+if "show_suggestions" not in st.session_state:
+    st.session_state.show_suggestions = True
+
+# ---------------- Mobile-Friendly CSS ----------------
 st.markdown(
     """
-<style>
-.stApp {
-    background: url("https://c.tenor.com/Ho0ZextTZJEAAAAC/ai-digital.gif")
-    no-repeat center center fixed;
-    background-size: cover;
-    min-height: 100vh;
-    color: #EAF2FF;
-    position: relative;
-}
+    <style>
+    .stApp {
+        background: linear-gradient(to bottom, #0f0f0f, #1a1a1a);
+        min-height: 100vh;
+    }
 
-.stApp::before {
-    content: "";
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.45);
-    z-index: 0;
-}
-
-.stApp > * {
-    position: relative;
-    z-index: 1;
-}
-
-.chat-row {
-    display: flex;
-    align-items: flex-start;
-    margin-bottom: 10px;
-}
-
-.chat-row.bot {
-    justify-content: flex-start;
-}
-
-.chat-row.user {
-    justify-content: flex-end;
-}
-
-.chat-avatar {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    border: 2px solid black;
-    flex-shrink: 0;
-}
-
-.chat-row.user .chat-avatar {
-    order: 2;
-    margin-left: 10px;
-}
-
-.chat-row.bot .chat-avatar {
-    margin-right: 10px;
-}
-
-.user-bubble,
-.bot-bubble {
-    border-radius: 16px;
-    padding: 10px 14px;
-    max-width: 70%;
-    word-wrap: break-word;
-    animation: fadeIn 0.3s ease-in-out;
-}
-
-.user-bubble {
-    background: #1E1E1E;
-    color: white;
-    border-bottom-right-radius: 4px;
-}
-
-.bot-bubble {
-    background: rgba(0,0,0,0.65);
-    color: white;
-    border-bottom-left-radius: 4px;
-}
-
-.stChatInput input {
-    background-color: black !important;
-    color: white !important;
-    border-radius: 12px !important;
-    border: 1px solid black !important;
-}
-
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(6px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
-/* ---------- Mobile ---------- */
-@media (max-width: 768px) {
-
-    .user-bubble,
-    .bot-bubble {
-        max-width: 85%;
-        font-size: 14px;
+    .chat-row {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 12px;
+        align-items: flex-start;
     }
 
     .chat-avatar {
-        width: 32px;
-        height: 32px;
+        width: 38px;
+        height: 38px;
+        border-radius: 50%;
+        flex-shrink: 0;
     }
 
-    .stChatInput {
-        position: fixed;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        padding: 8px 12px;
-        background: rgba(0,0,0,0.9);
-        z-index: 100;
+    .user-bubble, .bot-bubble {
+        padding: 12px 14px;
+        border-radius: 16px;
+        max-width: 78%;
+        font-size: 15px;
+        line-height: 1.5;
+        word-wrap: break-word;
     }
 
-    .stApp {
-        padding-bottom: 90px;
+    .user-bubble {
+        background: #2563eb;
+        color: white;
     }
 
-    h1 {
-        font-size: 1.4rem !important;
-        text-align: center;
+    .bot-bubble {
+        background: rgba(255,255,255,0.08);
+        color: white;
     }
-}
-</style>
-""",
+
+    /* -------- Mobile Fixes -------- */
+    @media (max-width: 600px) {
+        .user-bubble, .bot-bubble {
+            max-width: 92%;
+            font-size: 14px;
+        }
+
+        .chat-avatar {
+            width: 32px;
+            height: 32px;
+        }
+    }
+    </style>
+    """,
     unsafe_allow_html=True
 )
 
-# ---------------- UI ----------------
+# ---------------- UI Header ----------------
 st.title("✨ Ask Ayesha's AI Career Bot")
 st.write(
-    "Ask me anything about **Ayesha's education, skills, and projects** — "
-    "answers come only from her CV."
+    "Ask anything about **Ayesha's education, skills, projects, and experience**. "
+    "Answers are generated **only from her CV**."
 )
 
 BOT_AVATAR = "https://cdn-icons-png.flaticon.com/512/4712/4712107.png"
 USER_AVATAR = "https://cdn-icons-png.flaticon.com/512/1077/1077063.png"
 
+# ---------------- Suggestion Buttons (START ONLY) ----------------
+if st.session_state.show_suggestions:
+    st.markdown("**Try asking:**")
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        if st.button("🎓 What is Ayesha's education?"):
+            st.session_state.messages.append(
+                {"role": "user", "content": "What is Ayesha's education?"}
+            )
+            st.session_state.show_suggestions = False
+            st.rerun()
+
+    with col2:
+        if st.button("💼 What projects has Ayesha done?"):
+            st.session_state.messages.append(
+                {"role": "user", "content": "What projects has Ayesha done?"}
+            )
+            st.session_state.show_suggestions = False
+            st.rerun()
+
 # ---------------- Chat Input ----------------
 if prompt := st.chat_input("Type your question about Ayesha's CV..."):
+    st.session_state.show_suggestions = False
     st.session_state.messages.append(
         {"role": "user", "content": prompt}
     )
@@ -243,20 +204,22 @@ chat_container = st.container()
 with chat_container:
     for msg in st.session_state.messages:
         if msg["role"] == "assistant":
-            row_class = "chat-row bot"
-            avatar = BOT_AVATAR
-            bubble = "bot-bubble"
+            st.markdown(
+                f"""
+                <div class="chat-row">
+                    <img src="{BOT_AVATAR}" class="chat-avatar">
+                    <div class="bot-bubble">{msg['content']}</div>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
         else:
-            row_class = "chat-row user"
-            avatar = USER_AVATAR
-            bubble = "user-bubble"
-
-        st.markdown(
-            f"""
-            <div class="{row_class}">
-                <img src="{avatar}" class="chat-avatar">
-                <div class="{bubble}">{msg['content']}</div>
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
+            st.markdown(
+                f"""
+                <div class="chat-row">
+                    <img src="{USER_AVATAR}" class="chat-avatar">
+                    <div class="user-bubble">{msg['content']}</div>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
