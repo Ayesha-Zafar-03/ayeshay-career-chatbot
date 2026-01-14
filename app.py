@@ -75,6 +75,9 @@ qa_chain = ConversationalRetrievalChain.from_llm(
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
+if "scroll_bottom" not in st.session_state:
+    st.session_state.scroll_bottom = False
+
 # ---------------- Custom CSS ----------------
 st.markdown("""
 <style>
@@ -190,6 +193,8 @@ if len(st.session_state.messages) == 0:
             with st.spinner("Thinking..."):
                 result = qa_chain.invoke({"question": text})
             st.session_state.messages.append({"role": "assistant", "content": result["answer"]})
+            st.session_state.scroll_bottom = True
+            st.rerun()
 
 # ---------------- Chat Input ----------------
 if prompt := st.chat_input("Type your question about Ayesha's CV..."):
@@ -197,6 +202,7 @@ if prompt := st.chat_input("Type your question about Ayesha's CV..."):
     with st.spinner("Thinking..."):
         result = qa_chain.invoke({"question": prompt})
     st.session_state.messages.append({"role": "assistant", "content": result["answer"]})
+    st.session_state.scroll_bottom = True
 
 # ---------------- Chat Display ----------------
 st.markdown('<div class="chat-wrapper" id="chatbox">', unsafe_allow_html=True)
@@ -219,12 +225,15 @@ for msg in st.session_state.messages:
 
 st.markdown("</div>", unsafe_allow_html=True)
 
-# ---------------- Auto Scroll Chat Box ----------------
-st.markdown("""
+# ---------------- Smart Auto Scroll ----------------
+auto = "true" if st.session_state.scroll_bottom else "false"
+st.session_state.scroll_bottom = False
+
+st.markdown(f"""
 <script>
 const chatbox = document.getElementById("chatbox");
-if (chatbox) {
+if (chatbox && {auto}) {{
     chatbox.scrollTop = chatbox.scrollHeight;
-}
+}}
 </script>
 """, unsafe_allow_html=True)
