@@ -176,7 +176,6 @@ if st.session_state.show_suggestions:
                 {"role": "user", "content": "What are Ayesha's technical skills?"}
             )
             st.session_state.show_suggestions = False
-            st.rerun()
 
 # ---------------- Chat Input ----------------
 if prompt := st.chat_input("Type your question about Ayesha's CV..."):
