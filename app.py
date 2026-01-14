@@ -30,17 +30,12 @@ INDEX_DIR = "chroma_index"
 # ---------------- Vector Store ----------------
 @st.cache_resource
 def load_vectorstore():
-    embeddings = HuggingFaceEmbeddings(
-        model_name="sentence-transformers/all-MiniLM-L6-v2"
-    )
+    embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
 
     if os.path.exists(INDEX_DIR):
-        return Chroma(
-            persist_directory=INDEX_DIR,
-            embedding_function=embeddings
-        )
+        return Chroma(persist_directory=INDEX_DIR, embedding_function=embeddings)
 
-    loader = PyPDFLoader(CV_PATH) if CV_PATH.lower().endswith(".pdf") else TextLoader(CV_PATH, encoding="utf8")
+    loader = PyPDFLoader(CV_PATH) if CV_PATH.endswith(".pdf") else TextLoader(CV_PATH, encoding="utf8")
     docs = loader.load()
 
     splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
@@ -58,11 +53,7 @@ llm = ChatGroq(
     temperature=0
 )
 
-memory = ConversationBufferMemory(
-    memory_key="chat_history",
-    return_messages=True,
-    output_key="answer"
-)
+memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True, output_key="answer")
 
 qa_chain = ConversationalRetrievalChain.from_llm(
     llm=llm,
@@ -75,10 +66,10 @@ qa_chain = ConversationalRetrievalChain.from_llm(
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-if "scroll_bottom" not in st.session_state:
-    st.session_state.scroll_bottom = False
+if "force_scroll" not in st.session_state:
+    st.session_state.force_scroll = False
 
-# ---------------- Custom CSS ----------------
+# ---------------- CSS ----------------
 st.markdown("""
 <style>
 
@@ -98,69 +89,35 @@ h1 { color: white !important; }
     border-radius: 18px;
 }
 
-/* Chat rows */
-.chat-row {
-    display: flex;
-    margin-bottom: 12px;
-    align-items: flex-end;
-}
+.chat-row { display: flex; margin-bottom: 12px; align-items: flex-end; }
+.chat-row.bot { justify-content: flex-start; }
+.chat-row.user { justify-content: flex-end; }
 
-/* Bot left */
-.chat-row.bot {
-    justify-content: flex-start;
-}
-
-/* User right */
-.chat-row.user {
-    justify-content: flex-end;
-}
-
-/* Bubbles */
 .user-bubble, .bot-bubble {
     border-radius: 16px;
     padding: 10px 14px;
     max-width: 65%;
-    animation: fadeIn 0.3s ease-in-out;
     word-wrap: break-word;
 }
 
-/* User */
 .user-bubble {
     background: #1E1E1E;
     color: white;
     border-bottom-right-radius: 4px;
 }
 
-/* Bot */
 .bot-bubble {
     background: rgba(0,0,0,0.75);
     color: white;
     border-bottom-left-radius: 4px;
 }
 
-/* Avatars */
 .chat-avatar {
     width: 36px;
     height: 36px;
     border-radius: 50%;
     margin: 0 8px;
     border: 2px solid black;
-}
-
-/* Input */
-.stChatInput input {
-    background-color: #1E1E1E !important;
-    color: white !important;
-    border: 2px solid black !important;
-    border-radius: 10px !important;
-}
-
-/* Buttons */
-.stButton>button {
-    background-color: #1E1E1E !important;
-    color: white !important;
-    border-radius: 8px !important;
-    border: 1px solid black !important;
 }
 
 </style>
@@ -170,39 +127,18 @@ h1 { color: white !important; }
 st.title("✨ Ask Ayesha's AI Career Bot")
 st.write("Ask me anything about **Ayesha's education, skills, and projects** — answers come only from her CV.")
 
-# ---------------- Download CV ----------------
-if os.path.exists(CV_PATH):
-    with open(CV_PATH, "rb") as file:
-        st.download_button("📄 Download CV", file, "Ayesha_Zafar_CV.pdf", "application/pdf")
-
 BOT_AVATAR = "https://cdn-icons-png.flaticon.com/512/4712/4712107.png"
 USER_AVATAR = "https://cdn-icons-png.flaticon.com/512/1077/1077063.png"
-
-# ---------------- Suggestions ----------------
-if len(st.session_state.messages) == 0:
-    st.markdown("#### 🔎 Try asking me:")
-    cols = st.columns(3)
-    suggestions = [
-        "Tell me about Ayesha's projects",
-        "What internships does Ayesha have?",
-        "What are Ayesha's top technical skills?"
-    ]
-    for i, text in enumerate(suggestions):
-        if cols[i].button(text):
-            st.session_state.messages.append({"role": "user", "content": text})
-            with st.spinner("Thinking..."):
-                result = qa_chain.invoke({"question": text})
-            st.session_state.messages.append({"role": "assistant", "content": result["answer"]})
-            st.session_state.scroll_bottom = True
-            st.rerun()
 
 # ---------------- Chat Input ----------------
 if prompt := st.chat_input("Type your question about Ayesha's CV..."):
     st.session_state.messages.append({"role": "user", "content": prompt})
+
     with st.spinner("Thinking..."):
         result = qa_chain.invoke({"question": prompt})
+
     st.session_state.messages.append({"role": "assistant", "content": result["answer"]})
-    st.session_state.scroll_bottom = True
+    st.session_state.force_scroll = True
 
 # ---------------- Chat Display ----------------
 st.markdown('<div class="chat-wrapper" id="chatbox">', unsafe_allow_html=True)
@@ -225,15 +161,30 @@ for msg in st.session_state.messages:
 
 st.markdown("</div>", unsafe_allow_html=True)
 
-# ---------------- Smart Auto Scroll ----------------
-auto = "true" if st.session_state.scroll_bottom else "false"
-st.session_state.scroll_bottom = False
+# ---------------- TRUE SCROLL CONTROL ----------------
+force = "true" if st.session_state.force_scroll else "false"
+st.session_state.force_scroll = False
 
 st.markdown(f"""
 <script>
-const chatbox = document.getElementById("chatbox");
-if (chatbox && {auto}) {{
-    chatbox.scrollTop = chatbox.scrollHeight;
+const box = document.getElementById("chatbox");
+
+// restore scroll
+const saved = sessionStorage.getItem("chat_scroll");
+if (box && saved && !{force}) {{
+    box.scrollTop = parseInt(saved);
+}}
+
+// force bottom only when new bot reply
+if (box && {force}) {{
+    box.scrollTop = box.scrollHeight;
+}}
+
+// always save scroll
+if (box) {{
+    box.addEventListener("scroll", () => {{
+        sessionStorage.setItem("chat_scroll", box.scrollTop);
+    }});
 }}
 </script>
 """, unsafe_allow_html=True)
