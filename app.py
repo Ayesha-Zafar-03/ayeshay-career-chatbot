@@ -15,13 +15,13 @@ from langchain.memory import ConversationBufferMemory
 # ---- Groq LLM ----
 from langchain_groq import ChatGroq
 
-# ---------------- Page Setup ----------------
+# ---------------- Setup ----------------
 st.set_page_config(
     page_title="Ayesha's Career Chatbot",
     layout="centered"
 )
 
-# ---------------- Load Environment ----------------
+# ---------------- Environment ----------------
 load_dotenv()
 if "GROQ_API_KEY" not in os.environ:
     st.error("❌ GROQ_API_KEY not found. Add it in your .env file.")
@@ -64,7 +64,7 @@ def load_vectorstore():
 
 # ---------------- Load AI ----------------
 vectorstore = load_vectorstore()
-retriever = vectorstore.as_retriever(search_kwargs={"k": 12})
+retriever = vectorstore.as_retriever(search_kwargs={"k": 15})
 
 llm = ChatGroq(
     groq_api_key=os.getenv("GROQ_API_KEY"),
@@ -92,83 +92,70 @@ if "messages" not in st.session_state:
 if "show_suggestions" not in st.session_state:
     st.session_state.show_suggestions = True
 
-# ---------------- Custom CSS (CHAT ONLY) ----------------
+# ---------------- Custom CSS (UNCHANGED) ----------------
 st.markdown(
     """
     <style>
     .stApp {
-        background: linear-gradient(to bottom, #0f0f0f, #1a1a1a);
+        background: url("https://c.tenor.com/Ho0ZextTZJEAAAAC/ai-digital.gif")
+        no-repeat center center fixed;
+        background-size: cover;
         min-height: 100vh;
     }
 
-    .chat-row {
-        display: flex;
-        gap: 10px;
-        margin-bottom: 12px;
-        align-items: flex-start;
-    }
-
-    .chat-avatar {
-        width: 38px;
-        height: 38px;
-        border-radius: 50%;
-        flex-shrink: 0;
-    }
-
     .user-bubble, .bot-bubble {
-        padding: 12px 14px;
-        border-radius: 16px;
-        max-width: 78%;
-        font-size: 15px;
-        line-height: 1.5;
-        word-wrap: break-word;
+        border-radius: 14px;
+        padding: 10px 14px;
+        margin: 6px 0;
+        max-width: 75%;
+        animation: fadeIn 0.3s ease-in-out;
     }
 
     .user-bubble {
-        background: #2563eb;
+        background: #1E1E1E;
         color: white;
     }
 
     .bot-bubble {
-        background: rgba(255,255,255,0.08);
+        background: rgba(0,0,0,0.6);
         color: white;
     }
 
-    /* Mobile optimization (chat only) */
-    @media (max-width: 600px) {
-        .user-bubble, .bot-bubble {
-            max-width: 92%;
-            font-size: 14px;
-        }
+    .chat-row {
+        display: flex;
+        margin-bottom: 10px;
+    }
 
-        .chat-avatar {
-            width: 32px;
-            height: 32px;
-        }
+    .chat-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        margin-right: 12px;
+        border: 2px solid black;
     }
     </style>
     """,
     unsafe_allow_html=True
 )
 
-# ---------------- UI Header ----------------
+# ---------------- UI ----------------
 st.title("✨ Ask Ayesha's AI Career Bot")
 st.write(
-    "Ask anything about **Ayesha's education, skills, projects, and experience**. "
-    "Responses are generated **only from her CV**."
+    "Ask me anything about **Ayesha's education, skills, and projects** "
+    "— answers come only from her CV."
 )
 
 BOT_AVATAR = "https://cdn-icons-png.flaticon.com/512/4712/4712107.png"
 USER_AVATAR = "https://cdn-icons-png.flaticon.com/512/1077/1077063.png"
 
-# ---------------- Suggestion Buttons (DEFAULT STYLE) ----------------
+# ---------------- Suggestion Panel (DEFAULT BUTTONS) ----------------
 if st.session_state.show_suggestions:
-    st.markdown("**Try asking:**")
+    st.markdown("### 🔎 Try asking:")
 
-    col1, col2 = st.columns(2)
+    col1, col2, col3 = st.columns(3)
 
     with col1:
-        if st.button("🎓 What is Ayesha's education?"):
+        if st.button("🎓 Education"):
             st.session_state.messages.append(
                 {"role": "user", "content": "What is Ayesha's education?"}
             )
@@ -176,9 +163,17 @@ if st.session_state.show_suggestions:
             st.rerun()
 
     with col2:
-        if st.button("💼 What projects has Ayesha done?"):
+        if st.button("💼 Projects"):
             st.session_state.messages.append(
-                {"role": "user", "content": "What projects has Ayesha done?"}
+                {"role": "user", "content": "What projects has Ayesha worked on?"}
+            )
+            st.session_state.show_suggestions = False
+            st.rerun()
+
+    with col3:
+        if st.button("🛠 Skills"):
+            st.session_state.messages.append(
+                {"role": "user", "content": "What are Ayesha's technical skills?"}
             )
             st.session_state.show_suggestions = False
             st.rerun()
