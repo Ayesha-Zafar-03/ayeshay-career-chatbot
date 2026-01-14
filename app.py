@@ -8,7 +8,7 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_community.vectorstores import Chroma
 
-# ---- Memory + Chains (core) ----
+# ---- Memory + Chains ----
 from langchain.chains import ConversationalRetrievalChain
 from langchain.memory import ConversationBufferMemory
 
@@ -18,34 +18,15 @@ from langchain_groq import ChatGroq
 # ---------------- Setup ----------------
 st.set_page_config(page_title="Ayesha's Career Chatbot", layout="centered")
 
-# Load API keys
 load_dotenv()
 if "GROQ_API_KEY" not in os.environ:
-    st.error("❌ GROQ_API_KEY not found. Add it in your .env file.")
+    st.error("❌ GROQ_API_KEY not found.")
     st.stop()
 
 CV_PATH = "cv.pdf"
 INDEX_DIR = "chroma_index"
 
-# ---------------- Auto Scroll ----------------
-def auto_scroll():
-    st.markdown(
-        """
-        <script>
-        const latest = document.getElementById("latest-bot-msg");
-        if (latest) {
-            latest.scrollIntoView({
-                behavior: "smooth",
-                block: "start"
-            });
-        }
-        </script>
-        """,
-        unsafe_allow_html=True
-    )
-
-
-# ---------------- Caching ----------------
+# ---------------- Vector Store ----------------
 @st.cache_resource
 def load_vectorstore():
     embeddings = HuggingFaceEmbeddings(
@@ -77,10 +58,10 @@ def load_vectorstore():
         persist_directory=INDEX_DIR
     )
 
-# ---------------- Load once ----------------
 vectorstore = load_vectorstore()
 retriever = vectorstore.as_retriever(search_kwargs={"k": 15})
 
+# ---------------- LLM ----------------
 llm = ChatGroq(
     groq_api_key=os.getenv("GROQ_API_KEY"),
     model="llama-3.3-70b-versatile",
@@ -104,57 +85,139 @@ qa_chain = ConversationalRetrievalChain.from_llm(
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-# ---------------- Custom CSS ----------------
+# ---------------- CSS ----------------
 st.markdown(
     """
-    <style>
-    .stApp {
-        background: url("https://c.tenor.com/Ho0ZextTZJEAAAAC/ai-digital.gif")
-        no-repeat center center fixed;
-        background-size: cover;
-        min-height: 100vh;
-    }
+<style>
+.stApp {
+    background: url("https://c.tenor.com/Ho0ZextTZJEAAAAC/ai-digital.gif")
+    no-repeat center center fixed;
+    background-size: cover;
+    min-height: 100vh;
+    color: #EAF2FF;
+    position: relative;
+}
 
-    .user-bubble, .bot-bubble {
-        border-radius: 14px;
-        padding: 10px 14px;
-        margin: 6px 0;
-        max-width: 75%;
-        animation: fadeIn 0.3s ease-in-out;
-    }
+.stApp::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.45);
+    z-index: 0;
+}
 
-    .user-bubble {
-        background: #1E1E1E;
-        color: white;
-    }
+.stApp > * {
+    position: relative;
+    z-index: 1;
+}
 
+.chat-row {
+    display: flex;
+    align-items: flex-start;
+    margin-bottom: 10px;
+}
+
+.chat-row.bot {
+    justify-content: flex-start;
+}
+
+.chat-row.user {
+    justify-content: flex-end;
+}
+
+.chat-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 2px solid black;
+    flex-shrink: 0;
+}
+
+.chat-row.user .chat-avatar {
+    order: 2;
+    margin-left: 10px;
+}
+
+.chat-row.bot .chat-avatar {
+    margin-right: 10px;
+}
+
+.user-bubble,
+.bot-bubble {
+    border-radius: 16px;
+    padding: 10px 14px;
+    max-width: 70%;
+    word-wrap: break-word;
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+.user-bubble {
+    background: #1E1E1E;
+    color: white;
+    border-bottom-right-radius: 4px;
+}
+
+.bot-bubble {
+    background: rgba(0,0,0,0.65);
+    color: white;
+    border-bottom-left-radius: 4px;
+}
+
+.stChatInput input {
+    background-color: black !important;
+    color: white !important;
+    border-radius: 12px !important;
+    border: 1px solid black !important;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* ---------- Mobile ---------- */
+@media (max-width: 768px) {
+
+    .user-bubble,
     .bot-bubble {
-        background: rgba(0,0,0,0.6);
-        color: white;
-    }
-
-    .chat-row {
-        display: flex;
-        margin-bottom: 10px;
+        max-width: 85%;
+        font-size: 14px;
     }
 
     .chat-avatar {
-        width: 40px;
-        height: 40px;
-        border-radius: 50%;
-        margin-right: 12px;
-        border: 2px solid black;
+        width: 32px;
+        height: 32px;
     }
-    </style>
-    """,
+
+    .stChatInput {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        padding: 8px 12px;
+        background: rgba(0,0,0,0.9);
+        z-index: 100;
+    }
+
+    .stApp {
+        padding-bottom: 90px;
+    }
+
+    h1 {
+        font-size: 1.4rem !important;
+        text-align: center;
+    }
+}
+</style>
+""",
     unsafe_allow_html=True
 )
 
 # ---------------- UI ----------------
 st.title("✨ Ask Ayesha's AI Career Bot")
 st.write(
-    "Ask me anything about **Ayesha's education, skills, and projects** "
-    "— answers come only from her CV."
+    "Ask me anything about **Ayesha's education, skills, and projects** — "
+    "answers come only from her CV."
 )
 
 BOT_AVATAR = "https://cdn-icons-png.flaticon.com/512/4712/4712107.png"
@@ -178,37 +241,22 @@ if prompt := st.chat_input("Type your question about Ayesha's CV..."):
 chat_container = st.container()
 
 with chat_container:
-    for i, msg in enumerate(st.session_state.messages):
-        is_latest_bot = (
-            i == len(st.session_state.messages) - 1
-            and msg["role"] == "assistant"
-        )
-
-        msg_id = "latest-bot-msg" if is_latest_bot else ""
-
+    for msg in st.session_state.messages:
         if msg["role"] == "assistant":
-            st.markdown(
-                f"""
-                <div class="chat-row" id="{msg_id}">
-                    <img src="{BOT_AVATAR}" class="chat-avatar">
-                    <div class="chat-msg">
-                        <div class="bot-bubble">{msg['content']}</div>
-                    </div>
-                </div>
-                """,
-                unsafe_allow_html=True
-            )
+            row_class = "chat-row bot"
+            avatar = BOT_AVATAR
+            bubble = "bot-bubble"
         else:
-            st.markdown(
-                f"""
-                <div class="chat-row">
-                    <img src="{USER_AVATAR}" class="chat-avatar">
-                    <div class="chat-msg">
-                        <div class="user-bubble">{msg['content']}</div>
-                    </div>
-                </div>
-                """,
-                unsafe_allow_html=True
-            )
-# Trigger scroll AFTER rendering
-auto_scroll()
+            row_class = "chat-row user"
+            avatar = USER_AVATAR
+            bubble = "user-bubble"
+
+        st.markdown(
+            f"""
+            <div class="{row_class}">
+                <img src="{avatar}" class="chat-avatar">
+                <div class="{bubble}">{msg['content']}</div>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
