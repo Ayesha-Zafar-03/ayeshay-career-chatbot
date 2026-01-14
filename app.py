@@ -190,7 +190,6 @@ if len(st.session_state.messages) == 0:
             with st.spinner("Thinking..."):
                 result = qa_chain.invoke({"question": text})
             st.session_state.messages.append({"role": "assistant", "content": result["answer"]})
-            st.rerun()
 
 # ---------------- Chat Input ----------------
 if prompt := st.chat_input("Type your question about Ayesha's CV..."):
