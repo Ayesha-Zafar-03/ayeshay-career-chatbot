@@ -91,7 +91,7 @@ st.markdown("""
 
 /* ===== Global Background ===== */
 .stApp {
-    background-image: url("ai-digital.gif");
+    background-image:st.get_media_file_url("ai-digital.gif");
     background-repeat: no-repeat;
     background-position: center;
     background-size: cover;
@@ -191,8 +191,8 @@ st.markdown(
     "Ask anything about **education, skills, experience & projects**"
 )
 
-BOT_AVATAR = "bot.png"
-USER_AVATAR = "user.png"
+BOT_AVATAR = st.get_media_file_url("bot.png")
+USER_AVATAR = st.get_media_file_url("user.png")
 
 # ───────────────── Send Message ─────────────────
 def send_message(text):
