@@ -27,6 +27,11 @@ if "GROQ_API_KEY" not in os.environ:
 CV_PATH = "cv.pdf"
 INDEX_DIR = "chroma_index"
 
+# ───────────────── Assets (IMPORTANT FIX) ─────────────────
+bg_url = st.get_media_file_url("ai-digital.gif")
+bot_url = st.get_media_file_url("bot.png")
+user_url = st.get_media_file_url("user.png")
+
 # ───────────────── Vector Store ─────────────────
 @st.cache_resource
 def load_vectorstore():
@@ -86,101 +91,91 @@ if "messages" not in st.session_state:
     st.session_state.messages = []
 
 # ───────────────── Styling ─────────────────
-st.markdown("""
+st.markdown(f"""
 <style>
 
 /* ===== Global Background ===== */
-.stApp {
-    background-image:st.get_media_file_url("ai-digital.gif");
+.stApp {{
+    background-image: url("{bg_url}");
     background-repeat: no-repeat;
     background-position: center;
     background-size: cover;
-}
+}}
 
 /* ===== Title ===== */
-h1 {
+h1 {{
     color: white !important;
     text-shadow: 1px 1px 4px black;
-}
+}}
 
 /* Prevent overlap with input */
-.main .block-container {
-    padding-bottom: 150px !important;
-}
+.main .block-container {{
+    padding-bottom: 160px !important;
+}}
 
 /* ===== Chat Layout ===== */
-.chat-row {
+.chat-row {{
     display: flex;
     margin: 0.7rem 0;
     align-items: flex-end;
-}
+}}
 
-.chat-row.bot { justify-content: flex-start; }
-.chat-row.user { justify-content: flex-end; }
+.chat-row.bot {{ justify-content: flex-start; }}
+.chat-row.user {{ justify-content: flex-end; }}
 
-.chat-avatar {
+.chat-avatar {{
     width: 36px;
     height: 36px;
     border-radius: 50%;
     margin: 0 8px;
-}
+}}
 
 /* ===== Bubbles ===== */
 .bot-bubble,
-.user-bubble {
+.user-bubble {{
     background: rgba(10,10,10,0.90);
     color: white;
     padding: 12px 16px;
     border-radius: 16px;
     max-width: 70%;
     word-wrap: break-word;
-}
+}}
 
-.bot-bubble { border-bottom-left-radius: 4px; }
-.user-bubble { border-bottom-right-radius: 4px; }
-
-/* ===== Buttons ===== */
-div[data-testid="stButton"] > button {
-    background: rgba(10,10,10,0.9);
-    color: white;
-    border-radius: 16px;
-    padding: 10px 14px;
-    border: 1px solid #333;
-}
+.bot-bubble {{ border-bottom-left-radius: 4px; }}
+.user-bubble {{ border-bottom-right-radius: 4px; }}
 
 /* ===== Input ===== */
-input[type="text"] {
+input[type="text"] {{
     background: rgba(10,10,10,0.95) !important;
     color: white !important;
     border-radius: 16px !important;
     border: 1px solid #333 !important;
-}
+}}
 
 /* ===== Mobile Fix ===== */
-@media (max-width: 768px) {
-
+@media (max-width: 768px) {{
     .bot-bubble,
-    .user-bubble {
+    .user-bubble {{
         max-width: 88%;
         font-size: 14px;
         padding: 10px 12px;
-    }
+    }}
 
-    .chat-avatar {
+    .chat-avatar {{
         width: 26px;
         height: 26px;
         margin: 0 6px;
-    }
+    }}
 
-    .main .block-container {
-        padding-bottom: 180px !important;
-    }
+    .main .block-container {{
+        padding-bottom: 190px !important;
+    }}
 
-    * {
+    * {{
         backdrop-filter: none !important;
         -webkit-backdrop-filter: none !important;
-    }
-}
+    }}
+}}
 
 </style>
 """, unsafe_allow_html=True)
@@ -190,9 +185,6 @@ st.title("✨ Ayesha's Career Chatbot")
 st.markdown(
     "Ask anything about **education, skills, experience & projects**"
 )
-
-BOT_AVATAR = st.get_media_file_url("bot.png")
-USER_AVATAR = st.get_media_file_url("user.png")
 
 # ───────────────── Send Message ─────────────────
 def send_message(text):
@@ -225,7 +217,7 @@ for msg in st.session_state.messages:
     if msg["role"] == "assistant":
         st.markdown(f"""
         <div class="chat-row bot">
-            <img src="{BOT_AVATAR}" class="chat-avatar">
+            <img src="{bot_url}" class="chat-avatar">
             <div class="bot-bubble">{msg['content']}</div>
         </div>
         """, unsafe_allow_html=True)
@@ -233,7 +225,7 @@ for msg in st.session_state.messages:
         st.markdown(f"""
         <div class="chat-row user">
             <div class="user-bubble">{msg['content']}</div>
-            <img src="{USER_AVATAR}" class="chat-avatar">
+            <img src="{user_url}" class="chat-avatar">
         </div>
         """, unsafe_allow_html=True)
 
