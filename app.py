@@ -21,7 +21,7 @@ st.set_page_config(
 # ───────────────── Env ─────────────────
 load_dotenv()
 if "GROQ_API_KEY" not in os.environ:
-    st.error("❌ GROQ_API_KEY not found")
+    st.error("❌ GROQ_API_KEY not found.")
     st.stop()
 
 CV_PATH = "cv.pdf"
@@ -70,7 +70,8 @@ llm = ChatGroq(
 
 memory = ConversationBufferMemory(
     memory_key="chat_history",
-    return_messages=True
+    return_messages=True,
+    output_key="answer"
 )
 
 qa_chain = ConversationalRetrievalChain.from_llm(
@@ -84,64 +85,160 @@ qa_chain = ConversationalRetrievalChain.from_llm(
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-# ───────────────── Adaptive Styling ─────────────────
+# ───────────────── Styling ─────────────────
 st.markdown("""
 <style>
-/* Desktop background */
-@media (min-width: 769px) {
-    .stApp {
-        background-image: url("https://c.tenor.com/Ho0ZextTZJEAAAAC/ai-digital.gif");
-        background-size: cover;
-        background-position: center;
-    }
+
+/* ===== Global Background ===== */
+.stApp {
+    background-image: url("https://c.tenor.com/Ho0ZextTZJEAAAAC/ai-digital.gif");
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: cover;
 }
 
-/* Mobile fallback */
-@media (max-width: 768px) {
-    .stApp {
-        background-color: #0f0f0f;
-    }
-}
-
+/* ===== Title ===== */
 h1 {
-    color: white;
+    color: white !important;
     text-shadow: 1px 1px 4px black;
 }
+
+/* Prevent overlap with input */
+.main .block-container {
+    padding-bottom: 150px !important;
+}
+
+/* ===== Chat Layout ===== */
+.chat-row {
+    display: flex;
+    margin: 0.7rem 0;
+    align-items: flex-end;
+}
+
+.chat-row.bot { justify-content: flex-start; }
+.chat-row.user { justify-content: flex-end; }
+
+.chat-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    margin: 0 8px;
+}
+
+/* ===== Bubbles ===== */
+.bot-bubble,
+.user-bubble {
+    background: rgba(10,10,10,0.90);
+    color: white;
+    padding: 12px 16px;
+    border-radius: 16px;
+    max-width: 70%;
+    word-wrap: break-word;
+}
+
+.bot-bubble { border-bottom-left-radius: 4px; }
+.user-bubble { border-bottom-right-radius: 4px; }
+
+/* ===== Buttons ===== */
+div[data-testid="stButton"] > button {
+    background: rgba(10,10,10,0.9);
+    color: white;
+    border-radius: 16px;
+    padding: 10px 14px;
+    border: 1px solid #333;
+}
+
+/* ===== Input ===== */
+input[type="text"] {
+    background: rgba(10,10,10,0.95) !important;
+    color: white !important;
+    border-radius: 16px !important;
+    border: 1px solid #333 !important;
+}
+
+/* ===== Mobile Fix ===== */
+@media (max-width: 768px) {
+
+    .bot-bubble,
+    .user-bubble {
+        max-width: 88%;
+        font-size: 14px;
+        padding: 10px 12px;
+    }
+
+    .chat-avatar {
+        width: 26px;
+        height: 26px;
+        margin: 0 6px;
+    }
+
+    .main .block-container {
+        padding-bottom: 180px !important;
+    }
+
+    * {
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+    }
+}
+
 </style>
 """, unsafe_allow_html=True)
 
 # ───────────────── Header ─────────────────
 st.title("✨ Ayesha's Career Chatbot")
-st.caption("Ask anything about education, skills, experience & projects")
+st.markdown(
+    "Ask anything about **education, skills, experience & projects**"
+)
 
-# ───────────────── CV Download (SAFE) ─────────────────
-with open(CV_PATH, "rb") as f:
-    st.download_button(
-        label="📄 Download CV",
-        data=f,
-        file_name="Ayesha_Zafar_CV.pdf",
-        mime="application/pdf"
+BOT_AVATAR = "https://cdn-icons-png.flaticon.com/512/4712/4712107.png"
+USER_AVATAR = "https://cdn-icons-png.flaticon.com/512/1077/1077063.png"
+
+# ───────────────── Send Message ─────────────────
+def send_message(text):
+    st.session_state.messages.append(
+        {"role": "user", "content": text}
     )
 
-st.divider()
+    with st.spinner("Thinking..."):
+        result = qa_chain.invoke({"question": text})
 
-# ───────────────── Chat History ─────────────────
+    st.session_state.messages.append(
+        {"role": "assistant", "content": result["answer"]}
+    )
+
+# ───────────────── Suggestions ─────────────────
+if len(st.session_state.messages) == 0:
+    cols = st.columns(3)
+    suggestions = [
+        "Tell me about Ayesha's projects",
+        "What internships has Ayesha done?",
+        "What are Ayesha's strongest skills?"
+    ]
+    for col, text in zip(cols, suggestions):
+        if col.button(text):
+            send_message(text)
+            st.rerun()
+
+# ───────────────── Chat Messages ─────────────────
 for msg in st.session_state.messages:
-    with st.chat_message(msg["role"]):
-        st.markdown(msg["content"])
+    if msg["role"] == "assistant":
+        st.markdown(f"""
+        <div class="chat-row bot">
+            <img src="{BOT_AVATAR}" class="chat-avatar">
+            <div class="bot-bubble">{msg['content']}</div>
+        </div>
+        """, unsafe_allow_html=True)
+    else:
+        st.markdown(f"""
+        <div class="chat-row user">
+            <div class="user-bubble">{msg['content']}</div>
+            <img src="{USER_AVATAR}" class="chat-avatar">
+        </div>
+        """, unsafe_allow_html=True)
 
 # ───────────────── Chat Input ─────────────────
-if prompt := st.chat_input("Ask anything about Ayesha's profile…"):
-    st.session_state.messages.append(
-        {"role": "user", "content": prompt}
-    )
-
-    with st.chat_message("assistant"):
-        with st.spinner("Thinking..."):
-            response = qa_chain.invoke({"question": prompt})
-            answer = response["answer"]
-            st.markdown(answer)
-
-    st.session_state.messages.append(
-        {"role": "assistant", "content": answer}
-    )
+if prompt := st.chat_input("Ask anything about Ayesha's CV..."):
+    if prompt.strip():
+        send_message(prompt)
+        st.rerun()
