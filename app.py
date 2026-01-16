@@ -91,7 +91,7 @@ st.markdown("""
 
 /* ===== Global Background ===== */
 .stApp {
-    background-image: url("https://c.tenor.com/Ho0ZextTZJEAAAAC/ai-digital.gif");
+    background-image: url("ai-digital.gif");
     background-repeat: no-repeat;
     background-position: center;
     background-size: cover;
@@ -191,8 +191,8 @@ st.markdown(
     "Ask anything about **education, skills, experience & projects**"
 )
 
-BOT_AVATAR = "https://cdn-icons-png.flaticon.com/512/4712/4712107.png"
-USER_AVATAR = "https://cdn-icons-png.flaticon.com/512/1077/1077063.png"
+BOT_AVATAR = "bot.png"
+USER_AVATAR = "user.png"
 
 # ───────────────── Send Message ─────────────────
 def send_message(text):
